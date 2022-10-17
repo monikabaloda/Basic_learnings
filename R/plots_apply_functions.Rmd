@@ -1,0 +1,186 @@
+---
+title: "STAT 206 Homework 2"
+output: pdf_document
+author: Monika Baloda
+---
+
+***This r-markdown file uses basic plots and data visualizations***
+
+The data set at [http://www.stat.cmu.edu/~cshalizi/uADA/13/hw/01/calif_penn_2011.csv] contains information about the housing stock of California and Pennsylvania, as of 2011.  Information as aggregated into "Census tracts", geographic regions of a few thousand people which are supposed to be fairly homogeneous economically and socially.
+
+1. _Loading and cleaning_
+    a. Load the data into a dataframe called `ca_pa`.
+```{r}
+ca_pa=read.csv("http://www.stat.cmu.edu/~cshalizi/uADA/13/hw/01/calif_penn_2011.csv")
+```
+    b. How many rows and columns does the dataframe have?
+    
+***Answer***: This dataframe has 11275 rows and 34 columns. 
+
+```{r}
+dim(ca_pa)
+```
+  c. Run this command, and explain, in words, what this does:
+  
+  ***Answer*** The following command return the sum of total number of missing observations in a particular column. 
+```
+colSums(apply(ca_pa,c(1,2),is.na))
+```
+    d. The function `na.omit()` takes a dataframe and returns a new dataframe, omitting any row containing an NA value.  Use it to purge the data set of rows with incomplete data.
+
+***Answer***
+```{r}
+ca_pa_new=na.omit(ca_pa)
+nrow(ca_pa)-nrow(ca_pa_new)
+ca_pa=ca_pa_new  #we update our data 
+```
+    e. How many rows did this eliminate?
+    
+***Answer***This function deletes 670 rows which were incomplete.
+
+  f. Are your answers in (c) and (e) compatible? Explain.
+  
+***Answer***: It's hard to check from inspection because answer in (e) need not to be the sum of all the missing observations. It is because suppose a variable Built_1950s is missing for a particular variable then it may also be missing for Bedrooms_4, hence making it only one final observation needed to be eliminated. However the total rows eliminated should be greater than or equal to number of missing values of any one variable, this is satisfied. Therefore, we find no evidence of (c) and (e) being not compatible.   
+
+
+2. _This Very New House_  
+    a. The variable `Built_2005_or_later` indicates the percentage of houses in each Census tract built since 2005.  Plot median house prices against this variable.
+
+ ***Answer***
+ 
+```{r}
+plot(ca_pa$Median_house_value, ca_pa$Built_2005_or_later,  main="New Built and Median house prices", 
+     xlab="Median house price", ylab="Share of house built in or after 2005")
+```
+    b. Make a new plot, or pair of plots, which breaks this out by state.  Note that the state is recorded in the `STATEFP` variable, with California being state 6 and Pennsylvania state 42.
+```{r}
+ca=subset(ca_pa, STATEFP==6)
+pa=subset(ca_pa, STATEFP==42)
+par(mfrow=c(1,2))
+plot(ca$Median_house_value, ca$Built_2005_or_later,  main="California", 
+     xlab="Median house price", ylab="Share of house built in or after 2005")
+plot(pa$Median_house_value, pa$Built_2005_or_later, main="Pennsylvania", 
+     xlab="Median house price", ylab="Share of house built in or after 2005")
+```
+
+
+3. _Nobody Home_  
+The vacancy rate is the fraction of housing units which are not occupied.  The dataframe contains columns giving the total number of housing units for each Census tract, and the number of vacant housing units.  
+    
+    
+  a. Add a new column to the dataframe which contains the vacancy rate.  What are the minimum, maximum, mean, and median vacancy rates?
+
+***Answer*** Summary numbers of vacancy rate are: minimum value is 0, maximum is 0.9653, mean i 0.08889, and median is 0.0677. 
+```{r}
+ca_pa$vacancy_rate=ca_pa$Vacant_units/ca_pa$Total_units
+summary(ca_pa$vacancy_rate)
+
+```
+    
+   b. Plot the vacancy rate against median house value.
+```{r}
+plot(ca_pa$Median_house_value, ca_pa$vacancy_rate, main="Vacancy Rate and Median house price",
+     xlab="Median house price", ylab="vacancy rate")
+```
+    
+  c. Plot vacancy rate against median house value separately for California and for Pennsylvania.  Is there a difference?
+  
+  ***Answer***: There appears to be no difference in broader shape of the graph. However in Pennsylvania, the vacancy rate of high valued houses is low.  
+    
+```{r}
+ca=subset(ca_pa, STATEFP==6)
+pa=subset(ca_pa, STATEFP==42)
+par(mfrow=c(1,2))
+plot(ca$Median_house_value, ca$vacancy_rate,  main="California", 
+     xlab="Median house price", ylab="Vacancy Rate")
+plot(pa$Median_house_value, pa$vacancy_rate, main="Pennsylvania", 
+     xlab="Median house price", ylab="Vacancy Rate ")
+
+```
+   
+    
+4. The column `COUNTYFP` contains a numerical code for counties within each state.  We are interested in Alameda County (county 1 in California), Santa Clara (county 85 in California), and Allegheny County (county 3 in Pennsylvania).
+    
+  a. Explain what the block of code at the end of this question is supposed to accomplish, and how it does it.
+    
+  ***Answer*** The code at the bottom of this text finds and stores the median house values located in Alameda county of California. 
+  It does so by first taking out the index numbers of the Alameda county by running a for loop on entire dataset. It then stores the median house valye into the vector accahmv.
+  
+  
+  b. Give a single line of R which gives the same final answer as the block of code.  Note: there are at least two ways to do this; you just have to find one.
+
+
+***Answer***
+
+```r{}
+ median(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),10])
+
+```
+
+  
+
+  c. For Alameda, Santa Clara and Allegheny Counties, what were the average percentages of housing built since 2005?
+
+***Answer*** The answer is 0.55, 1.1, and 0 respectively. 
+```r{}
+ names(ca_pa)
+ median(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),16])
+ median(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==85),16])
+ median(ca_pa[which(ca_pa$STATEFP==42 & ca_pa$COUNTYFP==3),16])
+ 
+```
+  
+
+  d. The `cor` function calculates the correlation coefficient between two variables.  What is the correlation between median house value and the percent of housing built since 2005 in (i) the whole data, (ii) all of California, (iii) all of Pennsylvania, (iv) Alameda County, (v) Santa Clara County and (vi) Allegheny County?
+  
+***Answer*** i) -0.0189  ii) -0.1154  iii) 0.2681  iv) 0.0130  v) -0.1726  vi) -0.1940
+```{r}
+cor(ca_pa[,10], ca_pa[,16])    #i)
+cor(ca_pa[which(ca_pa$STATEFP==6),10], ca_pa[which(ca_pa$STATEFP==6 ),16])    #ii)
+cor(ca_pa[which(ca_pa$STATEFP==42),10], ca_pa[which(ca_pa$STATEFP==42),16])    #iii)
+cor(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),10], 
+    ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),16])    #iv)
+cor(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==85),10], 
+    ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==85),16])  #v)
+cor(ca_pa[which(ca_pa$STATEFP==42 & ca_pa$COUNTYFP==3),10], 
+    ca_pa[which(ca_pa$STATEFP==42 & ca_pa$COUNTYFP==3),16])  #vi)
+
+```
+  
+  e. Make three plots, showing median house values against median income, for Alameda, Santa Clara, and Allegheny Counties.  (If you can fit the information into one plot, clearly distinguishing the three counties, that's OK too.)
+
+```{r}
+par(mfrow=c(2,2))
+plot(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),10], 
+     ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==1),16], 
+     xlab="median house price", ylab="% built after 2005", main="Alameda")
+
+plot(ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==85),10], 
+     ca_pa[which(ca_pa$STATEFP==6 & ca_pa$COUNTYFP==85),16], 
+     xlab="median house price", ylab="% built after 2005", main="Santa Clara")
+
+plot(ca_pa[which(ca_pa$STATEFP==42 & ca_pa$COUNTYFP==3),10], 
+     ca_pa[which(ca_pa$STATEFP==42 & ca_pa$COUNTYFP==3),16], 
+     xlab="median house price", ylab="% built after 2005", main="Allegheny")
+```
+  
+  
+  
+  
+```{r, eval=FALSE}
+acca <- c()
+for (tract in 1:nrow(ca_pa)) {
+  if (ca_pa$STATEFP[tract] == 6) {
+    if (ca_pa$COUNTYFP[tract] == 1) {
+      acca <- c(acca, tract)
+    }
+  }
+}
+accamhv <- c()
+for (tract in acca) {
+  accamhv <- c(accamhv, ca_pa[tract,10])
+}
+median(accamhv)
+```
+
+
