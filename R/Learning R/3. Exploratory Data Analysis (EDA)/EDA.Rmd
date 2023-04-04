@@ -1,0 +1,484 @@
+---
+title: "Exploratory Data Analysis (EDA)"
+author: "Monika Baloda (mbalo005@ucr.edu)"
+output:
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+  html_document:
+    toc: yes
+    toc_depth: 4
+---
+
+This R-markdown does exploratory data analysis (EDA). We use `nycflights13` datset, a built-in R dataset contains information on all 336,776 flights that departed from New York City in 2013. The data comes from the [US Bureau of Transportation Statistics](http://www.transtats.bts.gov/DatabaseInfo.asp?DB_ID=120&Link=0).
+
+
+In this EDA, we do the followings: 
+
+ 1. Filtering observations using specific conditions using `filter()` function
+     i) Single condition     ii) Multiple 'OR' condition  iii) Multiple 'AND' condition
+     
+ 
+ 2. Ranking manipulation of dataset e.g. ordering using `arrange()` function 
+ 
+ 
+ 3. Selection of variables by their names using `select()` function
+
+
+ 4. Creating new variables with functions of existing variables using `mutate()` function
+ 
+ 
+ 5. Dealing with time zone differences as well as the daylight saving time (DST).
+ 
+ 
+ 6. Calculating group-wise summaries - combine `summarise()` and `group_by()`
+ 
+ 
+ 7. Finding best/worst flights considering issues of outliers and missing values. 
+ 
+
+ 8. Pattern recognization using multiple functions discussed above.
+
+
+
+
+**Load necessary packages**
+
+We use R's in-built _nycflights13_ dataset  
+```{r, collapse=T, warning=FALSE}
+# install.packages("tidyverse")
+library(tidyverse) # for `ggplot2` and `dplyr`
+library(dplyr)
+# You need to install the nycflights13 package first, then you can comment out the following line.
+# install.packages("nycflights13")
+library(nycflights13)
+```
+
+**Part I:  Exploratory data analysis of the `nycflights13` data sets**
+
+A quick look at the datset
+```{r, collapse=T}
+#?flights # full documentation
+# View(flights) # see the data in RStudio Viewer
+head(flights)
+```
+
+*Missing value treatment*
+
+There are some missing values in the data set which were caused by **canceled flights**. We can clean the `flights` data by removing flight record that has missing values in `dep_delay` or `arr_delay`, and save the **non-canceled** flights in a new tibble `not_canceled`.
+```{r, collapse=T}
+not_canceled = filter(flights, !is.na(dep_delay), !is.na(arr_delay))
+#not_canceled  #making sure that cancelled ones are deleted.
+```  
+
+In the following questions, we will use `ggplot2` and `dplyr` functions to perform exploratory data analysis. 
+
+<font color="blue">If not specified, flight delays usually refer to **arrival delays**</font>.
+
+
+**a) Filtering : Pick observations by their values - `filter()`**
+
+We find the **non-canceled** flights that satisfy each of the following conditions.
+
+*(i) Had an arrival delay of two or more hours*
+```{r, collapse=T}
+not_canceled= flights %>% filter(!is.na(dep_delay), !is.na(arr_delay))
+two_hour_delays= not_canceled %>% filter(arr_delay >= 120) 
+      # 120 means delay is two or more hours because time is recorded in minutes
+dim(two_hour_delays) #verify the resulting dataframe has expected numbr of rows & columns 
+```
+ 
+*(ii) Were operated by United, American, or Delta*
+
+**ANSWER**
+```{r, collapse=T}
+not_canceled = flights %>% filter(!is.na(dep_delay), !is.na(arr_delay))
+major_airlines = c("UA", "AA", "DL")
+not_canceled_UA_DL_AA= not_canceled %>% filter(carrier %in% major_airlines)
+head(not_canceled_UA_DL_AA)
+```
+
+*(iii) Arrived more than two hours late, but didn't leave late*
+
+**ANSWER**
+```{r, collapse=T}
+not_canceled= flights %>% filter(!is.na(dep_delay), !is.na(arr_delay))
+cool_flights= not_canceled %>% filter(arr_delay >= 120 & dep_delay <= 0)
+head(cool_flights)  
+```
+
+*(iv) Departed between midnight and 6am(inclusive)*
+**ANSWER**
+```{r, collapse=T}
+not_canceled= flights %>% filter(!is.na(dep_delay), !is.na(arr_delay))
+morning_guys=not_canceled %>% filter(dep_time >= 0 & dep_time <= 600) #<= make sure inclusion
+head(morning_guys)
+```
+
+
+**b) Ranking and Filtering : Reorder the rows - `arrange()`**
+
+*flights data is arranged by descending order of arrival delay*
+```{r, collapse=T}
+arranged_flights = flights %>% arrange(desc(arr_delay))
+head(arranged_flights) #seeing initial rows of the arranged data frame
+```
+
+
+Some ranking and filtering exercise applied on **non-canceled** flights. 
+
+*(i) Finding the top five most delayed flights. Report the flight date, origin, destination, carrier, flight number, and  arrival delay*.
+```{r, collapse=T}
+not_canceled= flights %>%filter(!is.na(dep_delay), !is.na(arr_delay))
+top_five_delayed_flights= not_canceled %>% arrange(desc(arr_delay)) %>%
+  head(5) %>%select(year, month, day, origin, dest, carrier, flight, arr_delay)
+top_five_delayed_flights
+```
+
+
+*(ii) Finding the flights traveled the longest by distance*. 
+```{r, collapse=T}
+# Arranging the flights data by descending order with distance
+longest_flights = not_canceled %>%arrange(desc(distance))
+
+# Longest flight's carrier,origin airport, & destination airport
+longest_flights %>%select(carrier, origin, dest)
+
+#additonal flights if one is interested to know beyond the longest 
+#head(unique(longest_flights$carrier))  #carrier in decreasing order  
+#head(unique(longest_flights$origin))   #the origin airport in decreasing order
+#head(unique(longest_flights$dest))   #the origin airport in decreasing order
+```
+_Question_ :What are the carrier, the origin airport, and the destination airport of these flights?
+
+_Answer_ : The flight with longest by distance is HA which starts from JFK and arrives at HNL airport.  Our asnwer also reports these information for additional flights in decreasing order **
+
+
+**c) Selection :  Pick variables by their names - `select()`**
+
+Listing at least three ways to select `dep_time`, `dep_delay`, `arr_time`, and `arr_delay` from **non-canceled** flights.
+
+1. Using the column names:
+```{r, collapse=T}
+not_canceled %>% select(dep_time, dep_delay, arr_time, arr_delay)
+```
+
+2. Using the starts_with() function to select columns "dep" or "arr"
+```{r, collapse=TRUE}
+s=not_canceled %>%select(starts_with(c("dep", "arr")))
+head(s)
+
+#or following code also works
+not_canceled %>%select(starts_with("dep"), starts_with("arr"))
+```
+
+3. Using the contains() function to select columns having "time" or "delay":
+```{r, collapse=T}
+not_canceled %>% 
+select(contains("time"), contains("delay"))
+```
+
+
+**d)  Create new variables with functions of existing variables - `mutate()`**
+
+Example code creating delay ratio of arrival to departure. 
+```{r, collapse=T}
+not_canceled %>% 
+mutate(delay_ratio = arr_delay/ dep_delay)
+```
+
+*(i) Creating a new variable `flight_time` which equals `arr_time` - `dep_time`*
+We also make a scatter plot to compare `flight_time` with `air_time`.
+```{r, collapse=T}
+not_canceled %>% 
+mutate(flight_time = arr_time - dep_time) %>% 
+ggplot(aes(x = air_time, y = flight_time)) +
+geom_point()+
+xlab("Air Time") +
+ylab("Flight Time")
+```
+
+_Question_ What do you expect to see? What do you see? Why are there negative values in `flight_time`?
+
+_Answer_ I was expecting a scatter plot showing relationship between flight time and air time variables. I saw that there are considerable number of negative values. The negative values of flight time could be because of three main reasons: difference in time zone due to daylight saving time, human error in recording, flight taking off one day and landing next day but day change is not taken into account.
+
+
+*ii) Fixing our R code to correct the negative values in `flight_time`*. 
+We are making the scatter plot again to confirm the correctness of our code. 
+```{r, collapse=T}
+library(lubridate)  #deals well with date and time 
+
+not_canceled_fixed = not_canceled %>%mutate(dep_time = hms::as_hms(dep_time),
+    arr_time = hms::as_hms(arr_time),flight_time = difftime(arr_time, dep_time, units = "mins"))
+
+ggplot(not_canceled_fixed, aes(x = air_time, y = flight_time)) +
+  geom_point() + xlab("Air Time (minutes)")+ ylab("Flight Time (minutes)")
+```
+
+**e) More on date and time**
+
+We note and wonder why our scatter plot didn't have a clear linear relationship. The reasons were due to the time zone differences as well as the daylight saving time (DST). Now we modify our R code to solve these issues. 
+
+```{r, collapse=T}
+#?airports
+#airports %>% glimpse()  #user can run this code to see airports. We save some space by commenting it
+
+# joining `flights` and `airports` using destination airport FAA code as the _key_.
+flights_with_airports= left_join(flights, airports, by = c("dest" = "faa"))
+
+#create d_s_t (day saving time) variable
+flights_with_airports= flights_with_airports %>% 
+  mutate(dst = ifelse(lon >= -75 & lon <= -67, "eastern",
+  ifelse(lon >= -160 & lon <= -154, "hawaii-aleutian", 
+  ifelse(lon >= -157 & lon <= -155, "hawaii-aleutian", "other"))))
+
+# create corrected_arr_time variable
+flights_with_airports = flights_with_airports %>% 
+   mutate(corrected_arr_time = arr_time + ifelse(dst == "eastern", 4, 
+   ifelse(dst == "hawaii-aleutian", 10, 0)))
+
+# making the scatter plot
+ggplot(flights_with_airports, aes(x = air_time, y = corrected_arr_time - dep_time)) + 
+  geom_point() + xlab("Air Time") +  ylab("Corrected Flight Time") + 
+  ggtitle("Comparison of Air Time and Corrected Flight Time")
+```
+
+
+***Summary Statistics:  Calculating group-wise summaries - combine `summarise()` and `group_by()`**
+
+
+Example code : summarizing mean arrival delay:
+```{r, collapse=T}
+not_canceled %>%
+group_by(carrier) %>%
+summarise(mean_arr_delay = mean(arr_delay, na.rm = TRUE))
+```
+
+
+**a) Daily flight cancellation rate**
+```{r, collapse=T}
+# Filter out cancelled flights
+flights_not_cancelled = flights %>% 
+filter(!is.na(dep_delay), !is.na(arr_delay))
+
+# Group the flights by date
+grouped_flights = flights_not_cancelled %>% 
+group_by(date = as.Date(as.POSIXct(time_hour, format = "%Y-%m-%d")))
+
+# Calculate the proportion of flights that were cancelled for each day
+daily_cancellation_rate = grouped_flights %>% 
+  summarise(cancelled = sum(is.na(dep_delay)),
+  total_flights = n(),
+  cancellation_rate = cancelled / total_flights)
+daily_cancellation_rate
+```
+
+
+*b) Is there a pattern in studying the number of canceled flights per day?* 
+We make a scatter plot of the proportion of canceled flights per day (x-axis) vs average delay per day (y-axis). 
+We then use point size to represent the number of originally scheduled flights on each day. 
+Now we add a smoothed fitted line to your scatter plot. 
+Now we see whether the proportion of canceled flights relates to the average delay?
+
+```{r, collapse=T}
+library(tidyverse)
+
+flights %>% 
+  mutate(date = as.Date(time_hour)) %>% 
+  group_by(month = format(date, "%m"), day = format(date, "%d")) %>% 
+  summarize(prop_cancelled = sum(is.na(arr_delay))/n(),
+  avg_delay = mean(arr_delay, na.rm = TRUE),
+  n_flights = n()) %>% 
+  ggplot(aes(prop_cancelled, avg_delay, size = n_flights)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  ggtitle("Proportion of Cancelled Flights vs Average Delay") +
+  xlab("Proportion of Cancelled Flights") +
+  ylab("Average Delay (minutes)")
+
+```
+
+
+*i) worst days for flight cancellation*
+
+_Question_ Which two days had the highest flight cancellation rates?
+
+_Answer_ Two days that had the highest flight cancellation rate are 2013-02-09, 2013-02-08.
+The following code prints out the desired results. 
+**ANSWER**
+```{r, collapse=T}
+flights %>%
+  mutate(date = as.Date(paste0(year, "-", month, "-", day))) %>%
+  group_by(date) %>%
+  summarise(cancelled_count = sum(is.na(dep_time)),
+  total_count = n(),
+  cancellation_rate = cancelled_count / total_count) %>%
+  arrange(desc(cancellation_rate)) %>%
+  head(2)
+```
+
+
+*ii) We now remove the two days with the highest flight cancellation rates and re-draw our scatter plot*.
+```{r, collapse=T}
+library(tidyverse)
+library(lubridate)
+
+flights_data=nycflights13::flights
+
+ 
+daily_flights = flights_data %>% # firstly, Group by date and
+  group_by(date = as.Date(time_hour)) %>%  # calculate the number of flights,
+  summarize(flights = n(),
+  cancelled = sum(is.na(dep_time)), #calculate the number of cancelled flights, the average delay
+  avg_delay = mean(arr_delay, na.rm = TRUE))
+
+
+highest_cancellation_days = daily_flights %>% # Filtering two days having the highest cancellation rates
+  arrange(desc(cancelled/flights)) %>% 
+  head(2) %>% 
+  pull(date)
+
+daily_flights_no_outliers = daily_flights %>% 
+  filter(!date %in% highest_cancellation_days)
+
+
+ggplot(daily_flights_no_outliers, # Plotting the proportion of cancelled(flights vs average delay)
+       aes(x = cancelled/flights, y = avg_delay)) + 
+  geom_point(aes(size = flights)) + 
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_size(range = c(0, 5)) +
+  labs(x = "Proportion of Cancelled Flights", y = "Average Delay (minutes)", size = "Number of Flights")
+ theme_minimal()
+```
+
+
+*iii) Finding reason(s) behind flight cancellation*
+
+_Question_ What do you think might be the main reason for these two high cancellation rates? Find out supporting evidences from the `nycfights13::weather` data set*.
+
+_Answer_  According to me the reason could be extreme whether conditions like strong winds, snow (may cause possibility of skidding), heavy rain or even fog(may cause low visibility). Such conditions may cause delay or cancellation.
+
+This code generate a scatter plot for each weather condition (temperature, humidity, wind speed, wind gust, visibility, and precipitation) with the average cancellation rate on the y-axis and the value of the weather condition on the x-axis. 
+```{r, collapse=T}
+# Joining the flights and weather data
+flights_weather = inner_join(flights, weather, by = c("year", "month", "day", "origin"))
+
+# now calculating the average cancellation rate for different weather condition
+cancellation_rate = flights_weather %>% 
+  group_by(temp, humid, wind_speed, wind_gust, visib, precip) %>% 
+  summarize(cancelled = mean(is.na(dep_delay)), n = n()) %>% 
+  ungroup()
+
+# Plot the average cancellation rate against the temperature, humidity, wind speed, and wind gust
+ggplot(cancellation_rate, aes(x = temp, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Temperature and Cancellation Rate")
+
+ggplot(cancellation_rate, aes(x = humid, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Humidity and Cancellation Rate")
+
+ggplot(cancellation_rate, aes(x = wind_speed, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Wind Speed and Cancellation Rate")
+
+ggplot(cancellation_rate, aes(x = wind_gust, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Wind Gust and Cancellation Rate")
+
+ggplot(cancellation_rate, aes(x = visib, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Visibility and Cancellation Rate")
+
+ggplot(cancellation_rate, aes(x = precip, y = cancelled)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) + 
+  ggtitle("Relationship between Precipitation and Cancellation Rate")
+```
+
+
+**c) Best/worst carrier of the year**
+
+(i) Suppose we are interested in identifying the carriers with the least/worst delays. To disentangle the effects of bad airports vs. bad carriers, we group all **non-canceled** flights by both carrier and dest, then calculate the average arrival delay for each carrier and dest pair. Make side-by-side boxplots to compare the distribution of average arrival delay among different carriers. Flip your boxplot to have horizontal display and rank all boxes by their median values.
+
+**ANSWER**
+```{r, collapse=T}
+library(nycflights13)
+library(dplyr)
+
+
+flights_not_cancelled = flights %>% # Filter out cancelled flights
+  filter(!is.na(arr_delay))
+
+
+grouped_flights =flights_not_cancelled %>% # Group flights by carrier and dest
+  group_by(carrier, dest)
+
+# Calculate the average arrival delay for each carrier and dest pair.
+average_arrival_delay = grouped_flights %>% 
+summarise(mean_delay = mean(arr_delay))
+
+# make side-by-side boxplots to compare
+library(ggplot2)
+ggplot(average_arrival_delay, aes(x = reorder(carrier, mean_delay), y = mean_delay)) + 
+  geom_boxplot(outlier.shape = NA) + 
+  coord_flip() +
+  ggtitle("Average Arrival Delay by Carrier")
+```
+
+
+_Question_  Which carrier had the least delays? Which carrier had the worst delays?
+
+_Answer_ From box plot, we can see the distribution of flight delays of different carriers averaged over destinations. Based on median delay value, the carrier with the least delays (best carrier) is "AS" and the carrier with the worst delays is "F9". But one can notice that there is no variability in their box-plots. This may be due to the effect that these carriers flew to only one destination. For example it could be case that one carrier flew to a destination where the weather is always clear, therefore does not face delay. We need to take care of this effect in our analysis*
+
+
+*ii) Small sample bias*
+
+_Question_ Is there a small `n` problem in your data analysis?
+
+_ANSWER_  Yes, there is a `n' problem in our data analysis. As we outlined in previous question, some carriers flew to only one destination, therefore may behave differently from others. We count the number of destinations per carrier to answer this. 
+We used the following block of code for this answer. 
+```{r, collapse=T}
+flights_non_cancelled = filter(flights, !is.na(arr_delay))
+dest_per_carrier = flights_non_cancelled %>%
+  group_by(carrier, dest) %>%
+  summarize(count = n()) %>%
+  group_by(carrier) %>%
+  summarize(destinations = n())
+dest_per_carrier
+```
+
+
+*iii) Deleting outliers and reconsidering the problem**
+
+We remove the carriers that only flew to one destination. Re-draw your boxplot and re-name the best/worst carriers.
+
+_New Answer_: From previous part, we found that carriers flew to one destination are: AS, F9, and HA. We need to remove these carriers and repeat the part analysis. After doing so, we found that the worst carrier is FL and the best carrier (least delay) is FL.
+
+```{r}
+flights_multiple_dest=flights_not_cancelled[flights_not_cancelled$carrier!="F9", ]  #removing F9 carrier 
+flights_multiple_dest=flights_multiple_dest[flights_multiple_dest$carrier!="HA", ]  #removing HA carrier
+flights_multiple_dest=flights_multiple_dest[flights_multiple_dest$carrier!="AS", ]  #removing AS carrier
+unique(flights_multiple_dest$carrier)        #just making sure that we have deleted the F9, HA, ASA carriers
+
+#now since we have removed singe destination carriers, we can repeat part i)
+grouped_flights =flights_multiple_dest %>%    # Group flights by carrier and dest
+  group_by(carrier, dest)
+
+# Calculate the average arrival delay for each carrier and dest pair.
+average_arrival_delay = grouped_flights %>% 
+summarise(mean_delay = mean(arr_delay))
+
+# make side-by-side boxplots to compare
+library(ggplot2)
+ggplot(average_arrival_delay, aes(x = reorder(carrier, mean_delay), y = mean_delay)) + 
+  geom_boxplot(outlier.shape = NA) + 
+  coord_flip() +
+  ggtitle("Average Arrival Delay by Carrier")
+```
+
