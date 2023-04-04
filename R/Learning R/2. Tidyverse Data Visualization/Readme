@@ -1,5 +1,26 @@
-This R-markdown does the following data visualization activities using tidyverse package of R: 
+Tidyverse is an advanced package used for data visualization in R. It gives user far better control than Base R. 
 
-1. 
+This R-markdown file uses tidyverse package in R to do data visualization exercise. In particular, it does the following: 
 
-2. 
+Part I :  We use earthquake data `quakes` of R to visualize it 
+
+  1. Plotting the distribution of earthquake magnitudes using tidyverse. In particular, we plot 
+     i) histogram  ii) boxplot   iii) empirical cdf  iv)Q-Q plot. 
+     
+  2. We plot earthquakes point on top of a map layer.
+
+
+
+Part II : We use `mpg` dataset to use cool visualization functions of tidyverse
+
+   1. Aesthetic mapping of `color`
+   
+   2. Different type of smoothing curves and colored points using group identity of a variable. 
+   
+   3. Using _Facets_ function to add additional variable(s) to a 2D plot.
+   
+   4. Playing with `stat` function.
+   
+   5. Position adjustment options for `geom_bar()
+  
+   
