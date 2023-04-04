@@ -1,0 +1,23 @@
+
+In this R-markdown, we evaluate different models and then comapre them to select the best performing model. 
+We use  the `Boston` data set contains housing values in suburbs of Boston.
+
+We upload rendered PDF and original R coded written in R-markdown file. 
+
+Our work in here can be written in following points: 
+
+   Part I : Model Evaluation Techniques
+   
+      1. Validation set approach 
+      
+      2. Forward selection method of variable selection 
+      
+      3. Cross-validation (CV) approach 
+      
+      
+   Part II: Model Selection 
+   
+      1. Polynomial Regression and Generalized Additive Models (GAMS)
+      
+      2. Model selection using least test error rate.
+   
