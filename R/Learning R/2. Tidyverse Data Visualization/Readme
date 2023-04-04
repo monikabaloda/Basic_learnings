@@ -6,7 +6,14 @@ If you want to have a look at my work, please open PDF file. If you want to use 
 
 This R-markdown file uses tidyverse package in R to do data visualization exercise. In particular, it does the following: 
 
-Part I :  We use earthquake data `quakes` of R to visualize it 
+***Part I : Using `dimond` price dataset, we use some advance plots***
+
+   1. Heatmaps and Changing colors of heatmap
+   
+   2. Histogram, Boxplot, Frequency Polygon, and Violin plots of tidyverse.
+
+
+***Part II :  We use earthquake data `quakes` of R to visualize it***. 
 
   1. Plotting the distribution of earthquake magnitudes using tidyverse. In particular, we plot 
      i) histogram  ii) boxplot   iii) empirical cdf  iv)Q-Q plot. 
@@ -15,7 +22,7 @@ Part I :  We use earthquake data `quakes` of R to visualize it
 
 
 
-Part II : We use `mpg` dataset to use cool visualization functions of tidyverse
+***Part III : We use `mpg` dataset to use cool visualization functions of tidyverse*** 
 
    1. Aesthetic mapping of `color`
    
@@ -26,5 +33,12 @@ Part II : We use `mpg` dataset to use cool visualization functions of tidyverse
    4. Playing with `stat` function.
    
    5. Position adjustment options for `geom_bar()
-  
    
+   
+***Part IV : In-depth visualization of `mpg` dataset*** 
+
+   1. Barplot, Coxcomb, Pie Charts 
+   
+   2. How highway mileage varies across drive train type : ordered median and coordination flips to compare. 
+  
+ 
