@@ -1,0 +1,314 @@
+---
+title: "Data Visualiation in Tidyverse"
+author: "Monika Baloda"
+date: 'January 10, 2023'
+output: pdf_document
+---
+
+This R-markdown file uses *tidyverse* package in R to do data visualization exercise. In particular, it does the following: 
+
+***Part I :  We use earthquake data `quakes` of R to visualize it***. 
+
+  1. Plotting the distribution of earthquake magnitudes using tidyverse. In particular, we plot 
+     i) histogram  ii) boxplot   iii) empirical cdf  iv)Q-Q plot. 
+     
+  2. We plot earthquakes point on top of a map layer.
+
+
+
+***Part II : We use `mpg` dataset to use cool visualization functions of tidyverse*** 
+
+   1. Aesthetic mapping of `color`
+   
+   2. Different type of smoothing curves and colored points using group identity of a variable. 
+   
+   3. Using _Facets_ function to add additional variable(s) to a 2D plot.
+   
+   4. Playing with `stat` function.
+   
+   5. Position adjustment options for `geom_bar()
+  
+   
+
+
+
+**Load necessary packages**
+```{r, collapse=T, warning=FALSE}
+# install the tidyverse package first if you have not done it yet.
+#install.packages("tidyverse") # you can comment out this line after you have installed `tidyverse`
+
+library(tidyverse) # for the `ggplot2` package
+```
+
+*For rendering in PDF*
+If you don't want to render (knit) the file in PDF format, you can ignore this block of code.If you face problem in rendering, please refer to debugging on https://yihui.org/tinytex/r/#debugging . 
+```{r}
+#tinytex::reinstall_tinytex()
+```
+
+
+***Main Analysis Starts From Here***
+
+***Dataset 1: Visualization the `quakes` data set in tidyverse***
+In our data visualization with Base R, we used the `quakes` data set contain the locations of 1000 seismic events of MB > 4.0. The events occurred in a cube near Fiji since 1964.
+
+```{r}
+library(datasets)
+?quakes 
+```
+
+```{r, collapse=T}
+class(quakes)
+head(quakes, n=5) # print first 5 rows of quakes
+dim(quakes)  # dimension of the table
+names(quakes)  # list the variables in quakes
+str(quakes)  # list the structures in quakes
+glimpse(quakes) # get a glimpse of the quakes data
+```
+
+**a) Plotting the distribution of earthquake magnitudes**
+
+Writing  `ggplot2` code to reproduce the following four subfigures in a 2-by-2 layout.  
+
+- subfigure #1: plot a density histogram of the earthquake magnitudes, and then plot the estimated probability density curve in red color in the same plot
+- subfigure #2: plot a horizontal boxplot of the earthquake magnitudes
+- subfigure #3: plot the empirical cdf of the earthquake magnitudes
+- subfigure #4: make a Q-Q plot to compare the observed earthquake magnitudes distribution with the Normal distribution. Add a *thick* Q-Q line in blue color.  
+
+```{r, collpase=T, warning=F}
+library(maps) 
+library(datasets)
+library(patchwork)
+
+par(mfrow=c(2,2))
+
+#subfigure-1
+plot1=ggplot(data=quakes)+
+geom_histogram(aes(mag), stat="density")+
+xlab("Earthquake Magnitude")+
+ggtitle("Histogram")+
+geom_density(aes(mag), col="red")+
+xlim(c(3,7))
+  
+
+#subfigure-2
+plot2=ggplot(data=quakes)+
+geom_boxplot(aes(mag))+
+xlab("Earthquake Magnitude")+
+ggtitle("Boxplot")
+
+
+#subfigure-3
+plot3=ggplot(data=quakes)+
+stat_ecdf(aes(mag))+
+xlab("Earthquake Magnitude")+
+ggtitle("Emprirical CDF")
+
+#subfigure-4
+plot4=ggplot(data=quakes,mapping=aes(sample=mag))+
+geom_qq()+ geom_qq_line()+
+xlab("Earthquake Magnitude")+
+ggtitle("Q-Q Plot")
+
+plot1+plot2+plot3+plot4
+```
+
+
+
+**b) Earthquake location map**
+Scatter plot of the earthquake locations. Use `long` as the x-axis and `lat` as the y-axis. Map `mag` to the size aesthetic and `depth` to the color aesthetic.
+```{r}
+ggplot(data=quakes, mapping=aes(x = long, y = lat, colour=depth, size=mag))+
+geom_point()
+```
+
+**c) Plotting earthquakes point on top of a map layer**
+```{r, warning=FALSE}
+library(maps)
+wc=map_data("world")
+
+ggplot()+
+geom_map(data=wc, map=wc, aes(long,lat, map_id=region), fill="white")+
+geom_point(data=quakes, mapping=aes(x = long, y = lat, colour=depth, size=mag))
+```
+
+
+***Dataset 2 : Visualization of the `mpg` data set***
+This data set contains fuel economy data 1999 - 2008 for 38 popular car models (source: EPA [http://fueleconomy.gov](http://fueleconomy.gov)).
+
+```{r, collapse=T}
+?mpg
+dim(mpg)  # dimension of the table
+names(mpg)  # list the variables in mpg
+str(mpg)  # list the structures in mpg
+glimpse(mpg) # get a glimpse of the mpg data
+```
+
+**a) Aesthetic mapping of `color`**
+
+*i)* The following codes does not show points in blue color. What's gone wrong with the following code? Why are the points not blue?
+```{r, collapse=T}
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = "blue"))
+```
+_Answer_: Points were not blue because color="blue" was written inside aes()/mapping which is not read as argument color by R, it is read as a vector c("blue") to map to an aesthetic, just like x and y variables displ and hwy. After writing color outside the mapping/aes, the R reads it as color**.
+
+```{r, collapse=T, include=FALSE}
+ggplot(data = mpg, aes(x = displ, y = hwy)) + 
+  geom_point(color = "blue")
+```
+
+_Task_: Correct the code to plot blue points.
+```{r, collapse=T}
+ggplot(data = mpg) + 
+  geom_point(aes(x = displ, y = hwy), color = "blue")
+```
+
+
+*(ii)* What happens if we map an aesthetic to something other than a variable name, like `aes(colour = displ < 5)`? 
+
+_Answer_ If we map an aesthetic to something other than a variable name, like 'aes(colour= displ<5) then ggplot() function works like a temporary variable is added in the data with values equal to the result of expression. In our case, it takes values of 'TRUE' Or 'FALSE' because displ<5 is a logical variable.x and y are displ and hwy as before.
+
+```{r, collapse=T}
+ggplot(mpg, aes(x = displ, y = hwy, colour = displ < 5)) +
+  geom_point()
+```
+
+
+**Part b) Some colorful plot using ggplot2 of tidyverse**
+
+*i)* Smooth plots according to group identity but same color. Group is `drv` variable which is a categorical variable taking 3 values: {r,f,4}. Where `r` is for rear wheels, `f` is for front wheels, and `4` stands for all four wheels.
+```{r, collapse=T}
+# Enter your code here
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_smooth(mapping = aes(group = drv), se = FALSE) +
+  geom_point()
+```
+
+*ii)* Smooth plots and colors according to group identity. Group is `drv` variable which is a categorical variable taking 3 values: {r,f,4}. WHERE r IS for rear wheels,f is for front wheels, and 4 stands for all four wheels.
+```{r, collapse=T}
+ggplot(mpg, aes(x = displ, y = hwy, colour = drv)) +
+  geom_point() +
+  geom_smooth(se = FALSE)
+```
+
+*iii)* Single smooth plot but data points being colored according to group identity. Group is `drv` variable which is a categorical variable taking 3 values: {r,f,4}. WHERE r IS for rear wheels,f is for front wheels, and 4 stands for all four wheels.
+```{r, collapse=T}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point(aes(colour = drv)) +
+  geom_smooth(se = FALSE)
+```
+*iv)* Diffierent smooth plots with different linetype according to group identity. Group is `drv` variable.
+```{r, collapse=T}
+ggplot(mpg, aes(x = displ, y = hwy)) +
+  geom_point(aes(colour = drv)) +
+  geom_smooth(aes(linetype = drv), se = FALSE)
+```
+
+
+
+**c) Facets:  to add additional variable(s) to a 2D plot**
+There are two ways to add additional variable(s) to a 2D plot. One is using aesthetics, the other one is using facets.
+
+*(i)* Scatter plot : x-axis is `displ` and y-axis is `hwy`. We use different colors to distinguish `drv` types.
+```{r, collapse=T}
+ggplot(data=mpg, mapping=aes(x = displ, y = hwy, colour=drv))+
+  geom_point()
+```
+
+
+*(ii)* Facet `drv` into the rows. That is, makes several **rows** of subplots, one row for each `drv` type. Each subplot has `displ` mapped to the x-axis and `hwy` mapped to the y-axis. [_Note_: Use `nrow` or `ncol` to control the layout of the individual panels].
+
+```{r, collapse=T}
+ ggplot(data=mpg, aes(x=displ, y=hwy, color=drv))+
+  geom_point()+
+  labs(x="displacement", y="hwy")+
+  scale_color_discrete(name="drv")+
+  facet_wrap(~drv, nrow=1)
+```
+
+
+
+**d) `stat` functions**
+
+Most `geom` functions and `stat` functions come in pairs that are almost always used in concert. 
+
+- every `geom` has a default `stat`
+- every `stat` has a default `geom` 
+
+Look up the default `stat` functions for the `geom` functions listed in the following table. The variables computed by the default `stat` function (Reference: the **Computed variables** section in the R-documentation page).
+
+
+| `geom` function     | default `stat` function  | variables computed by the default `stat` function  |
+|-----------------    |--------------------------|-----------------------------|
+| `geom_bar()`        |     count                |  Frequency                  |
+| `geom_histogram()`  |     bin                  |  Frequency                  |
+| `geom_density()`    |     density              |  Density, Count             |
+| `geom_point()`      |     identity             |  Sum of values              |
+| `geom_smooth()`     |     smooth               |  Smoothed or locally averaged  value |
+
+
+_Question_: Some `geom` function has stat = "identity" as the default. What does that mean?
+
+_Answer_ : If there are 3 teams A,B, and c with equal occurrence. Then geom_bar function will create bar chart displaying the count of occurrence in the games, which is equal. But, If we use stat="identity" with geom_bar then bar chart will be created displaying sum of points scored by the teams in each game. (Additional Note: Table formatting are sometimes tricky using R Markdown. [Table Generator](http://www.tablesgenerator.com/markdown_tables) is a handy tool if you need to make tables in the future.)
+
+
+**e) Position adjustment options for `geom_bar()`**
+
+Using two categorical variables from the `mpg` data set and to illustrate the following four position adjustment options for `geom_bar()`:
+
+- **default**: position = "stack"
+- position = "identity" will place each object exactly where it falls in the context of the graph. 
+- position = "fill" works like stacking, but makes each set of stacked bars the same height. 
+- position = "dodge" places overlapping objects directly beside one another. 
+the bars are automatically stacked. Each colored rectangle represents a combination of cut and clarity.
+
+*i)* position = "stack"
+```{r}
+ggplot(data=mpg)+
+geom_bar( mapping= aes(drv) , position = "stack")
+
+```
+
+*ii)* position = "identity"
+
+It will place each object exactly where it falls in the context of the graph. 
+```{r}
+ggplot(data=mpg)+
+geom_bar( mapping= aes(drv) , position = "identity")
+
+```
+
+*iii)* position = "fill"
+
+It works like stacking, but makes each set of stacked bars the same height. 
+```{r}
+ggplot(data=mpg)+
+geom_bar( mapping= aes(drv) , position = "fill")
+
+```
+
+*iv)* position = "dodge"
+
+dodge places overlapping objects directly beside one another.
+```{r}
+ggplot(data=mpg)+
+geom_bar( mapping= aes(drv) , position = "dodge")
+
+```
+
+
+_Question_ Which position option do you like most? What conclusions can you draw from your plot?
+
+_ANSWER_ : I liked position = "dodge" which places overlapping objects directly beside one another. Choosing right position argument is important part of making good plot. You may like other position, it is not really a right or wrong answer. 
+
+
+  
+  
+## **Acknowledgments**
+<font color="blue">
+List of all the help I have received for completing this work.
+1. I used rdocumentation.org website to learn more about the functions. 
+2. I used geeksforgeeks.com website to get help on tidyverse paradigm of R.
+</font>
+
