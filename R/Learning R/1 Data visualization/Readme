@@ -1,0 +1,17 @@
+This Rmarkdown does the followings: 
+
+1. Visualize using following plots:
+    i)density histogram ii) box-plot  iii) empirical cdf  iv) Q-Q plot 
+
+    
+2. Outlier detection 
+
+3. Writing code to calculate Minimum variance unbiased estimates for Normal distribution. 
+
+4.  Visualize your model fitness by plotting standard normal curve over sample. 
+
+5. Multiple scatterplots in one plot in 2x2 layout.
+
+6. Single scatterplot 
+
+7. Plotting on Map
