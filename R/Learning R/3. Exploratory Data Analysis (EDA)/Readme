@@ -1,3 +1,9 @@
+
+
+This R-markdown does exploratory data analysis (EDA). 
+We use `nycflights13` datset, a built-in R dataset contains information on all 336,776 flights that departed from New York City in 2013. 
+The data comes from the [US Bureau of Transportation Statistics](http://www.transtats.bts.gov/DatabaseInfo.asp?DB_ID=120&Link=0).
+
 In this EDA, we do the followings: 
 
  1. Filtering observations using specific conditions using `filter()` function
