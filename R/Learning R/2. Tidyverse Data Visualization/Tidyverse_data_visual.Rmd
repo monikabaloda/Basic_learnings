@@ -7,7 +7,15 @@ output: pdf_document
 
 This R-markdown file uses *tidyverse* package in R to do data visualization exercise. In particular, it does the following: 
 
-***Part I :  We use earthquake data `quakes` of R to visualize it***. 
+  
+***Part I : Using `dimond` price dataset, we use some advance plots***
+
+   1. Heatmaps and Changing colors of heatmap
+   
+   2. Histogram, Boxplot, Frequency Polygon, and Violin plots of tidyverse.
+
+
+***Part II :  We use earthquake data `quakes` of R to visualize it***. 
 
   1. Plotting the distribution of earthquake magnitudes using tidyverse. In particular, we plot 
      i) histogram  ii) boxplot   iii) empirical cdf  iv)Q-Q plot. 
@@ -16,7 +24,7 @@ This R-markdown file uses *tidyverse* package in R to do data visualization exer
 
 
 
-***Part II : We use `mpg` dataset to use cool visualization functions of tidyverse*** 
+***Part III : We use `mpg` dataset to use cool visualization functions of tidyverse*** 
 
    1. Aesthetic mapping of `color`
    
@@ -27,10 +35,15 @@ This R-markdown file uses *tidyverse* package in R to do data visualization exer
    4. Playing with `stat` function.
    
    5. Position adjustment options for `geom_bar()
-  
    
+   
+***Part IV : In-depth visualization of `mpg` dataset*** 
 
-
+   1. Barplot, Coxcomb, Pie Charts 
+   
+   2. How highway mileage varies across drive train type : ordered median and coordination flips to compare. 
+  
+ 
 
 **Load necessary packages**
 ```{r, collapse=T, warning=FALSE}
@@ -49,7 +62,96 @@ If you don't want to render (knit) the file in PDF format, you can ignore this b
 
 ***Main Analysis Starts From Here***
 
-***Dataset 1: Visualization the `quakes` data set in tidyverse***
+
+
+
+***Part I: Visualization the `diamonds` data set**
+This data set contains the prices and other attributes of almost 54,000 diamonds. 
+
+*A quick look at the dataset* I'm commenting most of it because my rendered PDF is getting too long. 
+```{r, collapse=T}
+#?diamonds
+dim(diamonds)  # dimension of the table
+#diamonds # print/view diamonds
+#str(diamonds)  # list the structures in diamonds
+#glimpse(diamonds) # get a glimpse of the data
+```
+
+
+**a) Heatmap of `cut` vs `clarity`**
+
+*(i)* Using [the `geom_tile()` function](https://ggplot2.tidyverse.org/reference/geom_tile.html)
+to make a heatmap to visualize the number of diamonds in each `cut` and `clarity` combination.
+
+```{r, collapse=T}
+# to calculate the frequency of each combination of cut and clarity
+cut_clarity_freq <- with(diamonds, table(cut, clarity))
+
+# Plotting the heatmap
+ggplot(as.data.frame(cut_clarity_freq), aes(clarity, cut, fill = Freq)) +
+geom_tile(color = "black") +
+scale_fill_gradient(low = "white", high = "blue") +
+labs(x = "Clarity", y = "Cut", title ="Heatmap of Cut vs Clarity") +
+theme_minimal()
+```
+
+
+*(ii)* Change the color palette of your heatmap.
+```{r, collapse=T}
+ggplot(as.data.frame(cut_clarity_freq),aes(clarity, cut, fill = Freq))+
+geom_tile(color = "black") + scale_fill_gradient(low = "yellow", high = "red") +
+labs(x = "Clarity", y = "Cut", title = "Heatmap of Cut vs Clarity") +
+  theme_minimal()
+```
+
+**b) Visualize the distribution of diamond price**
+
+
+*(i)* Using [the `geom_violin()` function](https://ggplot2.tidyverse.org/reference/geom_violin.html) to
+compare the distribution of `price` across different `cut`.
+```{r, collapse=T}
+library(ggplot2) #library is loaded
+ggplot(diamonds, aes(x = cut, y = price)) +geom_violin() #creates a violin plot(diamonds, is the data frame)
+```
+
+*(ii)* Using [the `geom_histogram()` function](http://ggplot2.tidyverse.org/reference/geom_histogram.html)
+to compare the distribution of `price` across different `cut`. Change the y-axis to density, 
+and use the `dodge` position adjustment.
+```{r, collapse=T}
+ggplot(diamonds, aes(price)) + geom_histogram(binwidth = 500, stat='density', position = 'dodge') + 
+labs(x = "Diamond Price", y = "density") + 
+  ggtitle("Distribution of Diamond Price")
+```
+
+*(iii)* Using [the `geom_freqpoly()` function](http://ggplot2.tidyverse.org/reference/geom_histogram.html)
+to compare the distribution of `price` across different `cut`. Change the y-axis to density.
+```{r, collapse=T}
+ggplot(diamonds, aes(price)) + geom_freqpoly(binwidth = 500, stat='density') +
+xlim(c(0, 20000)) + xlab("Price") + ylab("density")+
+ggtitle("Distribution of Diamond Price")
+```
+
+*(iv)* Using [the `geom_boxplot()` function](https://ggplot2.tidyverse.org/reference/geom_boxplot.html)
+to compare the distribution of `price` across different `cut`.
+```{r, collapse=T}
+ggplot(diamonds, aes(x = cut, y = price)) + 
+  geom_boxplot()
+```
+
+_Question_ What observations can you make from the above plots? Which visualization function is your favorite?
+Explain your choice.
+
+_ANSWER_ In the plots mentioned above, we can observe the distribution of the diamond prices and how it varies depending on attributes like cut, clarity, and color. The histogram and frequency polygon gives us an idea of the density of the prices and how they are spread across various values. The boxplot give us median, quartiles and outliers of the data set, usually helps in comparing multiple datasets because easy comparison of range and median values can be done due to box shape. Violin plots have character of both box plot with kernel density plot to show us full density distribution of the data. In violin plot, shape of data distribution includes skewness and multiplicity with range and median values. So, box plot is good if we want to understand whole distribution of one dataset. It is convenient to use both plots to provide more information. At last, in my opinion, if we want quick summary of data distribution, then box plot is a good choice. However, if we need more detailed understanding of density and shape of distribution then violin plot is better. And if we have a large number of observation, then a histogram or frequency polygon can help us to understand overall distribution of the data.**
+  
+  
+  
+  
+
+  
+
+
+
+***Part II: Visualization the `quakes` data set in tidyverse***
 In our data visualization with Base R, we used the `quakes` data set contain the locations of 1000 seismic events of MB > 4.0. The events occurred in a cube near Fiji since 1964.
 
 ```{r}
@@ -133,7 +235,7 @@ geom_point(data=quakes, mapping=aes(x = long, y = lat, colour=depth, size=mag))
 ```
 
 
-***Dataset 2 : Visualization of the `mpg` data set***
+***Part III : Visualization of the `mpg` data set***
 This data set contains fuel economy data 1999 - 2008 for 38 popular car models (source: EPA [http://fueleconomy.gov](http://fueleconomy.gov)).
 
 ```{r, collapse=T}
@@ -303,6 +405,80 @@ _Question_ Which position option do you like most? What conclusions can you draw
 _ANSWER_ : I liked position = "dodge" which places overlapping objects directly beside one another. Choosing right position argument is important part of making good plot. You may like other position, it is not really a right or wrong answer. 
 
 
+
+
+***Part IV:  Visualize the distribution of drive train types in mpg dataset***
+
+**a) Barplot (frequency histogram) to display the distribution of `drv`, the type of drive train**.
+Using different colors to distinguish different drive train types. Explicitly label the number of car models
+of each drive train type on top of the bars.
+```{r, collapse=T}
+ggplot(mpg, aes(x = drv)) + 
+geom_bar(aes(fill = drv), position = "dodge")+ #create bar plot, graph that represents data using rectangular bars
+geom_text(stat = "count", aes(label = ..count..), position =position_dodge(width = 0.1), vjust = -0.5) +
+scale_fill_manual(values = c("#00AFAA", "#BC7800", "#00FE07")) +
+labs(x = "Train Types (drive)", y = "Count", fill = "Drive Train Types")
+```
+
+**b) Drawing a coxcomb or pie chart to display the proportions of each drive train types**
+Plotting a pie chart to display the proportions of each drive train types
+```{r, collapse=T}
+drv_counts= table(mpg$drv) #"drv" column of the "mpg" data frame is used as the categorical variable
+                            
+pie(drv_counts, main="Proportions of Each Drive Train Types", labels=names(drv_counts), col=c("blue", "red", "green"))
+legend("topright", legend=names(drv_counts), fill=c("blue", "red", "green"))
+```
+
+**c) How highway mileage varies across drive train type?**
+
+We generate a horizontal boxplot to compare the distribution of highway mileage across three different drive train types.
+Reorder the boxes by the median mileage values.
+
+_ANSWER_ The front wheel drive median highway mileage is high among other two. The least median mileage is of rear wheel drive. That means if we order all the vehicles of different categories the highway mileage of middle one is the highest in front-wheel drive. However, this category contains outliers unlike others.
+
+```{r, collapse=T}
+ 
+ggplot(mpg, aes(x = drv, y = hwy)) + # part1-Creating a horizontal boxplot
+  geom_boxplot(outlier.color = "red",outlier.shape = 3,outlier.size = 3) + #box plot with red triangle-shaped outliers
+                                                                           #that are 3 times larger than the default size.
+  coord_flip()+ #"coord_flip()" function switches the orientation of the plot
+  xlab("Drive Train Type") +
+  ylab("Highway Mileage (mpg)") +
+  ggtitle("Highway Mileage by Drive Train Type")+
+  theme(plot.title =element_text(hjust = 0.5)) + #sets the justification of the plot title to be centered.
+  theme(axis.text.x = element_text(angle =45, hjust = 1))+ #sets x-axis labels to be rotated by 45 degrees & right-justified.
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_text(hjust = 0.5)) +
+  scale_x_discrete(limits = c("4", "f", "r"), labels = c("Four-Wheel Drive", "Front-Wheel Drive", "Rear-Wheel Drive")) +
+  theme(legend.title = element_blank(), legend.position = "none") +
+  theme_minimal() #removes most of the plot decorations such as axis lines, gridlines, and background colors
+```
+
+```{r, collapse=T}
+
+mpg_median <- mpg %>%  #part2-Reordeing the boxes
+group_by(drv) %>% #specifies the variable(s) by which the data should be grouped.
+summarize(median = median(hwy)) %>% #calculates median of "hwy"(highway miles per gallon)variabl fr each group ofdata
+ arrange(desc(median)) #sort the data in descending order based on the median of the "hwy" variable
+
+ggplot(mpg, aes(x = fct_reorder(drv, hwy, .fun = median), y = hwy)) + 
+geom_boxplot(outlier.colour = "red", outlier.shape = 3, outlier.size = 3)+
+coord_flip() +
+xlab("Drive Train Type") +
+ylab("Highway Mileage (mpg)") +
+ggtitle("Highway Mileage by Drive Train Type") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_text(hjust = 0.5)) +
+  scale_x_discrete(limits = mpg_median$drv, labels = c("Front-Wheel Drive", "Four-Wheel Drive", "Rear-Wheel Drive")) +
+  theme(legend.title = element_blank(), legend.position = "none") +
+  theme_minimal()
+```
+
+
+
+  
   
   
 ## **Acknowledgments**
