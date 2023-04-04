@@ -1,0 +1,241 @@
+---
+title: "Map visualization with `ggplot2` of Tidyverse"
+author: "Monika Baloda"
+output: pdf_document
+---
+
+
+In this R-markdown, I play with maps using tidyverse/ggplot   basic regressions.  also show some visualizations and data cleaning steps before jumping to regressions. 
+Main steps done in this exercise can be put in the following points: 
+
+  1. Plotting USA maps and state maps
+  
+  
+  2. Plotting by manipulations
+  
+  
+  3. Application of maps with ggplot using NYC flight destination map 
+
+
+**Load necessary packages**
+```{r, collapse=T,warning=FALSE}
+#install.packages("maps")
+#install.packages("mapproj")
+
+library(tidyverse) # for `ggplot2`, `dplyr`, and more
+
+library(maps) # for map visualization
+#library(mapdata)
+library(mapproj) 
+
+library(datasets) # for `state` data set
+library(nycflights13) # for the 2013 NYC flights data set
+```
+
+***
+
+***Map visualization with `ggplot2`***
+
+In this work, we will draw maps with `ggplot2`. 
+
+The `maps` package comes with a plotting function, but, we will opt to use `ggplot2` functions (`geom_polygon` and `geom_map`) to plot the maps in the `maps` package.
+
+Recall that `ggplot2` operates on data frames. We will use the `map_data()` function (provided by `ggplot2`), which turns a series of points along an outline into a data frame of those points.
+
+***1) Plot the USA map***
+
+First we load the USA map from `maps`.
+```{r, collapse=T}
+usa_map <- map_data("usa")
+dim(usa_map)
+glimpse(usa_map)
+```
+
+We use `geom_polygon()` to make a simple black map (no line color, but with a black fill).
+```{r}
+ggplot(data = usa_map) + 
+  geom_polygon(aes(x = long, y = lat, group = group)) + 
+  coord_quickmap()
+```
+
+We google the coordinates of University of California Riverside, and then use `geom_point()` to mark the location of UCR on the USA map.
+In addition, change the outline/border color as well as the fill-in color of your map.
+
+plot the USA map with white fill and black outline below
+```{r, collapse=T}
+usa_map= map_data("usa")
+
+ggplot(data = usa_map) + 
+  geom_polygon(aes(x = long, y = lat, group = group), fill= "white", color = "black") + 
+  coord_quickmap()+
+  ##point to mark the location of UCR, with coordinates of UCR
+  geom_point(x = -117.2387, y = 33.9738, size= 3, colour = "red")
+```
+
+***2) Plot the states map***
+
+In addition to `geom_polygon()`, we can use `geom_map()` to draw maps too. Basically, `geom_map()` acts as a wrapper of `geom_polygon()`. See more details in the `geom_map()` documentation @ http://ggplot2.tidyverse.org/reference/geom_map.html
+
+Here is the example code of a states map. 
+We can plot all the states, map the `fill` aesthetic to `region` and set the the lines of state borders to white color.
+
+```{r, collapse=T}
+states_map =map_data("state")
+dim(states_map)
+glimpse(states_map)
+```
+
+```{r, collapse=T}
+ggplot() + 
+  geom_map(data = states_map, map = states_map,
+           aes(map_id = region, fill = region), color="white") + 
+  # geom_map() doesn't work in such a way that ggplot2 knows the extend of the map values, so you always have to expand the limits by hand yourself.
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  coord_quickmap() +
+  guides(fill = FALSE) # do this to leave off the color legend
+```
+
+Next, we will use the built-in `state` data sets in R to annotate our states map. In particular, `state.x77` is a two-dimensional array containing 8 variables and data from all 50 states.
+
+```{r, collapse=T}
+#?state.x77
+head(state.x77)
+
+state_data <- as.data.frame(state.x77)
+state_data$State <- tolower(rownames(state_data))
+state_data %>% glimpse()
+```
+
+Below is the example code from the lecture for a state population map. We first create an aesthetic mapping for `map_id` to the column `State` (state names in lower case) in the `state_data` data frame. We then call `geom_map` again and map the `fill` aesthetic to the `Population` variable in `state_data`.
+
+```{r, collapse=T}
+ggplot(data = state_data, aes(map_id = State))+ 
+  geom_map(map = states_map,
+           aes(fill = Population)) + 
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  coord_quickmap() 
+```
+
+**a)  Drawing sample states map and map the `fill` aesthetic to `Income` in the `state.x77` data set**
+```{r, collapse=T}
+states_map= map_data("state")
+
+#converts the built-in dataset "state.x77" into a data frame
+state_data =as.data.frame(state.x77)
+state_data$State=tolower(rownames(state_data))
+
+ggplot(data = state_data, aes(map_id = State))+ 
+  geom_map(map = states_map,
+           aes(fill = Income)) + 
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  coord_quickmap() +
+  labs(title = "State Income Map") +
+  scale_fill_gradient(low = "white", high = "darkblue") +
+  guides(fill = guide_colorbar(title = "Income"))
+
+```
+
+**b) Adding 50 colorful points to your map** 
+We use one point to mark one state (state coordinates can be found in `state.center`). Map the color of the points to `state.region`. Map the `size` aesthetic of the points to `Population`.
+
+```{r, collapse=T}
+state_coords= data.frame(state.center)
+
+#adds a new column "region" to the data frame "state_coords".
+state_coords$region=state.region
+state_coords$Population= state.x77[,"Population"]
+
+states_map= map_data("state")
+
+ggplot() +
+  geom_polygon(data = states_map, aes(x = long, y= lat, group = group),color = "white", fill = "gray70") +
+  geom_point(data = state_coords, aes(x = x, y = y, color = region, size = Population)) +
+  scale_color_brewer(palette = "Dark2") +
+  scale_size(range = c(1, 10)) +
+  labs(title = "Population & Region of US States",
+       x = "", y = "") +
+ theme_void()
+```
+***
+
+***3. NYC flight destination map : application of maps using ggplot***
+
+`nycflights13::flights` data set contains all 336,776 flights that departed from New York City in 2013.
+
+```{r, collapse=T}
+#?flights # full documentation
+#glimpse(flights)
+```
+
+**a) Counting the number of flights per destination**
+
+How many unique destination airports did these NYC flights connected to? How many **non-canceled** flights per destination? Which destination had the largest number of arrival flights from NYC? Which destination had the smallest number of arrival flights from NYC?
+
+**ANSWER**
+```{r, collapse=T}
+num_destinations= length(unique(nycflights13::flights$dest))
+cat("Number of unique destination airports: ", num_destinations, "\n")
+
+non_cancelled_flights= subset(nycflights13::flights, !is.na(arr_delay))
+#aggregates the "arr_delay" variable
+non_cancelled_by_dest= aggregate(non_cancelled_flights$arr_delay, by = list(non_cancelled_flights$dest), FUN =length)
+names(non_cancelled_by_dest)= c("destination", "num_flights")
+cat("Number of non-cancelled flights per destination:\n")
+print(non_cancelled_by_dest)
+
+max_dest= non_cancelled_by_dest[which.max(non_cancelled_by_dest$num_flights),"destination"]
+#cat function to print a message to the console
+cat("Destination with the largest number of arrival flights: ", max_dest, "\n")
+
+min_dest=non_cancelled_by_dest[which.min(non_cancelled_by_dest$num_flights), "destination"]
+cat("Destination with the smallest number of arrival flights: ", min_dest, "\n")
+```
+
+**b) Marking all destination airports on a states map**
+Find out the coordinates of the destination airports from `nycflights13::airports`. Draw each destination airport as a point on a states map, and map a point aesthetic to the number of **non-canceled** flights flew to that destination from NYC in 2013.
+
+```{r, eval=F}
+#?airports
+airports %>% glimpse()
+left_join(per_dest, airports, by=c("dest"="faa"))
+```
+
+```{r, collapse=T}
+library(ggplot2)
+library(nycflights13)
+library(magrittr)
+library(dplyr)
+
+per_dest= flights %>%
+  filter(!is.na(dep_delay)) %>% # remove cancelled flights
+  group_by(dest) %>% #groups the filtered data by the dest column
+  summarize(n = n()) # count the non-cancelled flights/destination
+
+ #performs a left join between the per_dest & airports dataframe
+df= left_join(per_dest, airports, by = c("dest" = "faa"))
+
+ggplot(df, aes(x = lon, y =lat, size = n)) +
+  borders("state", colour = "grey50", fill = NA) +
+  geom_point() +
+  scale_size_continuous(range = c(1, 10))
+```
+_Question_ Which destination airports have missing values? 
+
+_ANSWER_
+```{r, collapse=T}
+#here dep_delay column is not NA (i.e., missing values).
+per_dest = flights %>% 
+  filter(!is.na(dep_delay)) %>% 
+  group_by(dest) %>% 
+  summarize(n = n()) %>% 
+  arrange(desc(n))
+
+# to find the airports with missing
+missing_airports = flights %>% 
+  filter(is.na(dep_delay)) %>% 
+  distinct(dest)
+
+# Print the list of airports with missing values
+#missing_airports that shows the unique destinations 
+missing_airports
+```
