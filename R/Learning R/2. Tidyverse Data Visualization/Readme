@@ -1,5 +1,9 @@
 Tidyverse is an advanced package used for data visualization in R. It gives user far better control than Base R. 
 
+I upload both rendered PDF file of this learning exercise and R-markdown file. 
+
+If you want to have a look at my work, please open PDF file. If you want to use codes given here, use R-markdown file. 
+
 This R-markdown file uses tidyverse package in R to do data visualization exercise. In particular, it does the following: 
 
 Part I :  We use earthquake data `quakes` of R to visualize it 
