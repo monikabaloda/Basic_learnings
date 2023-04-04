@@ -1,0 +1,26 @@
+In this EDA, we do the followings: 
+
+ 1. Filtering observations using specific conditions using `filter()` function
+     i) Single condition     ii) Multiple 'OR' condition  iii) Multiple 'AND' condition
+     
+ 
+ 2. Ranking manipulation of dataset e.g. ordering using `arrange()` function 
+ 
+ 
+ 3. Selection of variables by their names using `select()` function
+
+
+ 4. Creating new variables with functions of existing variables using `mutate()` function
+ 
+ 
+ 5. Dealing with time zone differences as well as the daylight saving time (DST).
+ 
+ 
+ 6. Calculating group-wise summaries - combine `summarise()` and `group_by()`
+ 
+ 
+ 7. Finding best/worst flights considering issues of outliers and missing values. 
+ 
+
+ 8. Pattern recognization using multiple functions discussed above.
+
