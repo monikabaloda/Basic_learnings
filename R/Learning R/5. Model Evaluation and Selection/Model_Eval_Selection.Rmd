@@ -1,0 +1,543 @@
+---
+title: "Model Evaluation and Selection"
+author: "Monika Baloda" 
+output: pdf_document
+---
+
+
+In this R-markdown, we evaluate different models and then comapre them to select the best performing model. 
+We use  the `Boston` data set contains housing values in suburbs of Boston.
+
+Our work in here can be written in following points: 
+
+   Part I : Model Evaluation Techniques
+   
+      1. Validation set approach 
+      
+      2. Forward selection method of variable selection 
+      
+      3. Cross-validation (CV) approach 
+      
+      
+   Part II: Model Selection 
+   
+      1. Polynomial Regression and Generalized Additive Models (GAMS)
+      
+      2. Model selection using least test error rate.
+   
+   
+
+
+**Load necessary packages**
+```{r, collapse=T, warning=FALSE}
+#install.packages("MASS")
+library(tidyverse) # for `ggplot2`, `dplyr`, and more
+library(MASS) # for `Boston` data set
+library(boot) # for `cv.glm` function
+```
+
+**Set the random seed**
+```{r}
+# set the random seed so the analysis is reproducible
+set.seed(232)
+```
+
+***Part I: Model Evaluation**
+
+Following codes introduces us to the dataset but for the sake of space, I comment these commands so that they do not appear in rendered PDF. 
+```{r, collapse=T}
+#?Boston # full documentation
+#dim(Boston)
+#glimpse(Boston)
+```
+
+We can perform a multiple linear regression which uses the full set of predictors to estimate the median housing values `medv`.
+```{r, collapse=T}
+lm.full <- lm(medv ~ . , Boston)
+summary(lm.full)
+```
+
+**1) Variable/feature selection: forward selection**
+
+Using all predictors increases the model complexity, and doesn't necessarily give us the best estimator. 
+
+Below we will practice the **forward selection** strategy.
+
+For **forward selection**, we begin with the null model --- a model that contains an intercept but no predictors. We then fit $p$ simple linear regressions and add to the null model the variable that results in the lowest Residual Sum of Squares (RSS). We then add to that model the variable that results in the lowest RSS for the new two-variable model. This approach is continued until some stopping rule is satisfied.
+
+
+Now we write R code to pick the top 3 most important variables using the *forward selection* strategy. 
+
+We save the resulting model which uses only the top 3 variables to be `lm.fwd3`. 
+
+_Question_ Name the three most important variables. 
+
+_Answer_ Three most important variables recommonded by forward selection method are _crim_, _rm_, and _lstat_.
+
+_Question_ What is the adjusted $R^2$ value of `lm.fwd3`?
+
+_Answer_  The adjusted $R^2$ statistics of this model is 0.6437.
+
+The following code implements desired code and gives the aforementioned results. 
+``````{r}
+# fit null model with just the intercept
+lm.null <- lm(medv ~ 1, data = Boston)
+
+# initialize variables
+n <- ncol(Boston) - 1  # number of predictors
+added <- c()  # added variables
+current <- lm.null  # current model
+
+# forward selection loop
+for (i in 1:n) {
+  # initialize variables for best addition
+  best_rss <- Inf
+  best_var <- NULL
+  
+  # loop through remaining variables to find the best addition
+  for (j in 1:n) {
+    # skip variable if already added
+    if (j %in% added) next
+    
+    # fit new model with added variable
+    new_var <- paste(names(Boston)[j], collapse = "+")
+    new_model <- update(current, formula = as.formula(paste0("medv ~ . + ", new_var)))
+    
+    # calculate RSS for new model
+    new_rss <- sum(resid(new_model)^2)
+    
+    # update best addition if RSS is smaller
+    if (new_rss < best_rss) {
+      best_rss <- new_rss
+      best_var <- j
+    }
+  }
+  
+  # add best variable to current model
+  current <- update(current, formula = as.formula(paste0("medv ~ . + ", names(Boston)[best_var])))
+  added <- c(added, best_var)
+  
+  # stop if we have added 3 variables
+  if (length(added) == 3) break
+}
+
+# print selected variables
+names(Boston)[-14][added]
+
+# fit final model with selected variables
+lm.fwd3 <- lm(medv ~ crim + rm + lstat, data = Boston)
+
+# print model summary
+summary(lm.fwd3)
+
+# print adjusted R-squared value
+cat("Adjusted R-squared value of lm.fwd3:", round(summary(lm.fwd3)$adj.r.squared, 4), "\n")
+
+```
+
+
+
+
+**2)  Model evaluation - Validation set approach**.
+
+*(i) Computing mean squared error (MSE)*
+
+$$
+\begin{aligned}
+\text{MSE} &= E \left[ \left(y- \hat{f}(x) \right)^2 \right] \\
+& =  \frac{1}{n} \sum_{i=1}^n \left(y_i- \hat{f}(x_i) \right)^2
+\end{aligned}
+$$
+
+We write a function `calculateMSE` that takes the following input arguments.
+
+**Inputs**:
+
+| Argument | Description                                                   | 
+|----------|---------------------------------------------------------------|
+|  `y`     | a vector giving the values of the response variable           |
+| `yhat`   | a vector giving the predicted values of the response variable |
+
+`calculateMSE` should return the following output.
+
+**Output**:
+
+Our function returns one numeric value of the computed MSE.
+
+```{r}
+calculateMSE <- function(y, yhat) {
+mse <- mean((y - yhat)^2)
+  return(mse)
+}
+
+# test the function
+y <- c(1, 2, 3, 4, 5)
+yhat <- c(2, 3, 4, 5, 6)
+calculateMSE(y, yhat) 
+```
+
+After completing the function, we run the following code. 
+```{r, collapse=T}
+lm.full <- lm(medv ~ . , Boston)
+lm.full.pred <- predict(lm.full)
+calculateMSE(Boston$medv, lm.full.pred)
+```
+
+
+*(ii) Compute adjusted $R^2$ value*
+
+$$
+\begin{aligned}
+\text{TSS} & = \sum_{i=1}^{n} (y_i - \bar{y})^2 \\
+\text{RSS} & = \sum_{i=1}^{n} \left(y_i - \hat{f}(x_i) \right)^2 \\
+R^2 & = \frac{\text{TSS}-\text{RSS}}{\text{TSS}} = 1 - \frac{\text{RSS}}{\text{TSS}} \\
+R^2_{\text{adjusted}} & =  1 - \frac{(n-1)(1-R^2)}{n-p-1}
+\end{aligned}
+$$
+
+We write a function `calculateR2adj` that takes the following input arguments.
+
+**Inputs**:
+
+| Argument | Description                                                   | 
+|----------|---------------------------------------------------------------|
+|  `y`     | a vector giving the values of the response variable           |
+| `yhat`   | a vector giving the predicted values of the response variable |
+|  `p`     | a vector indicating the number of predictors used             |
+
+`calculateR2adj` should return the following output.
+
+**Output**:
+
+ Function returns one numeric value of the computed adjusted $R^2$ value.
+
+
+```{r}
+calculateR2adj <- function(y, yhat, p) {
+ n <- length(y)
+  rss <- sum((y - yhat)^2)
+  tss <- sum((y - mean(y))^2)
+  r2 <- 1 - rss/tss
+  r2adj <- 1 - ((n - 1)/(n - p - 1)) * (1 - r2)
+  return(r2adj)
+}
+```
+
+After you completing the function, run the following code. This gives us optimal value of $R^2_{adjusted}$.
+```{r, collapse=T}
+# p <- dim(Boston)[2] -1 
+p <- length(coef(lm.full)) - 1
+calculateR2adj(Boston$medv, lm.full.pred, p)
+```
+
+***
+
+*(iii) Now let's evaluate `lm.full` and `lm.fwd3` using the validation set approach*.
+
+
+_Question_ Which model is better based the validation set approach? Explain your answer. What statistic(s) did you use to draw your conclusion?
+
+_Answer_  The results from the validation set approach show that the full model and the forward stepwise model with k=3 have comparable training and test mean squared error (MSE) values. However, the full model has a higher adjusted R-squared value for both the training and test sets. This suggests that the full model is superior to the forward stepwise model with k=3.
+
+The following code impliments our codes and gives the aforementioned results. 
+```{r, collapse=T}
+dim(Boston)
+
+# Define a function to calculate MSE
+calculateMSE <- function(resid) {
+  mse <- mean(resid^2)
+  return(mse)
+}
+
+# Define a function to calculate adjusted R-squared
+calculateR2adj <- function(y, yhat, p) {
+  n <- length(y)
+  rss <- sum((y - yhat)^2)
+  tss <- sum((y - mean(y))^2)
+  r2 <- 1 - rss/tss
+  r2adj <- 1 - ((n - 1)/(n - p - 1)) * (1 - r2)
+  return(r2adj)
+}
+
+# Split the data 50/50 into training set and test set
+set.seed(232) # set the seed so the analysis is reproducible
+train.idx <- sample(506, 253) # random sample the training data index
+train <- Boston[train.idx, ] # training set
+test <- Boston[-train.idx, ] # validation/test set
+
+# Fit the full model
+lm.full <- lm(medv ~ ., data=train)
+lm.full.pred.train <- predict(lm.full, newdata=train)
+lm.full.pred.test <- predict(lm.full, newdata=test)
+
+# Calculate MSE and adjusted R-squared for the full model
+mse.full.train <- calculateMSE(lm.full.pred.train - train$medv)
+mse.full.test <- calculateMSE(lm.full.pred.test - test$medv)
+r2adj.full.train <- calculateR2adj(train$medv, lm.full.pred.train, length(coef(lm.full))-1)
+r2adj.full.test <- calculateR2adj(test$medv, lm.full.pred.test, length(coef(lm.full))-1)
+
+# Print the results for the full model
+cat("Full Model:\n")
+cat("Training MSE:", round(mse.full.train, 5), "\n")
+cat("Test MSE:", round(mse.full.test, 5), "\n")
+cat("Training Adjusted R-squared:", round(r2adj.full.train, 7), "\n")
+cat("Test Adjusted R-squared:", round(r2adj.full.test, 7), "\n\n")
+
+# Fit the forward stepwise model with k=3
+library(MASS)
+lm.fwd3 <- stepAIC(lm(medv ~ 1, data=train), 
+                   direction="forward", 
+                   scope=list(lower=~1, upper=~crim+zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat), 
+                   k=3)
+lm.fwd3.pred.train <- predict(lm.fwd3, newdata=train)
+lm.fwd3.pred.test <- predict(lm.fwd3, newdata=test)
+
+# Calculate MSE and adjusted R-squared for the forward stepwise model with k=3
+mse.fwd3.train <- calculateMSE(lm.fwd3.pred.train - train$medv)
+mse.fwd3.test <- calculateMSE(lm.fwd3.pred.test - test$medv)
+r2adj.fwd3.train <- calculateR2adj(train$medv, lm.fwd3.pred.train, length(coef(lm.fwd3))-1)
+r2adj.fwd3.test <- calculateR2adj(test$medv, lm.fwd3.pred.test, length(coef(lm.fwd3))-1)
+
+# Print the results for the forward stepwise model with k=3
+cat("Forward Stepwise Model (k=3):\n")
+
+```
+
+
+**3)Model evaluation - Cross Validation (CV) approach**
+
+*i)  10-fold CV on the `lm.full` model and report the CV MSE*.
+
+$$\text{MSE}_\text{CV} = \frac{1}{K}\sum_{k = 1}^K \text{MSE}_k$$
+, where $K=10$ is the number of folds and $\text{MSE}_k$ is the test MSE in the $k$-th fold.
+
+```{r, collapse=T}
+set.seed(232)
+n <- dim(Boston)[1]
+n.folds <- 10
+folds.idx <- sample(rep(1:n.folds), n, replace = T)
+mse.cv <- rep(0, n.folds) # where you store the test mse for each fold
+
+for (k in 1:n.folds){
+  test.idx <- which(folds.idx == k)
+  train <- Boston[-test.idx, ] # your training data in fold k
+  test <- Boston[test.idx, ] # your test data in fold k
+  
+  # Fit linear model using training data
+  lm.fit <- lm(medv ~ ., data=train)
+  
+  # Make predictions on test data
+  y.pred <- predict(lm.fit, newdata=test)
+  
+  # Calculate test MSE
+  mse.cv[k] <- mean((y.pred - test$medv)^2)
+}
+
+# Compute and output the average test MSE across all CV folds
+mean.mse.cv <- mean(mse.cv)
+cat("CV MSE:", mean.mse.cv)
+```
+
+*ii) Weighted CV MSE*
+
+When $n$ is not divisible by $K$, it will not be possible to partition the sample into $K$ *equally sized groups*.  we make the groups as equally sized as possible.  When the groups are of unequal size, the preferred way of calculating the average MSE is by using a *weighted* average.
+
+More precisely, if $n_k$ is the number of observations in fold $k$ and $MSE_k$ is the MSE estimated from fold $k$, the weighted average estimate of MSE is:
+
+$$ \text{MSE}_\text{CV.weighted} = \sum_{k = 1}^K \frac{n_k}{n} \text{MSE}_k $$
+
+It's easy to check that if $n$ is evenly divisible by $K$ then each $n_k = n/K$, and so the above expression reduces to the formula: $\text{MSE}_\text{CV} = \frac{1}{K}\sum_{k = 1}^K MSE_k$
+
+Now we write the code below to calculate the weighted CV MSE. 
+```{r}
+# weighted CV
+set.seed(232)
+n <- dim(Boston)[1]
+n.folds <- 10
+folds.idx <- sample(rep(1:n.folds, length.out = n), n, replace = TRUE)
+mse.cv.weighted <- rep(0, n.folds) # where you store the weighted test mse for each fold
+for (k in 1:n.folds) {
+  test.idx <- which(folds.idx == k)
+  train <- Boston[-test.idx, ]
+  test <- Boston[test.idx, ]
+  
+  # fit model on training data
+  fit <- glm(medv ~ ., data = train)
+  
+  # predict on test data and calculate MSE
+  pred <- predict(fit, newdata = test)
+  mse.test <- mean((test$medv - pred)^2)
+  
+  # calculate weight for this fold
+  n.k <- length(test$medv)
+  weight.k <- n.k / n
+  
+  # update weighted CV MSE
+  mse.cv.weighted[k] <- weight.k * mse.test
+}
+
+# calculate average of weighted CV MSEs
+cv.mse.weighted <- sum(mse.cv.weighted)
+
+cv.mse.weighted # print weighted CV MSE
+
+```
+
+
+*iii)Alternatively, we can call the `cv.glm()` function to perform the cross-validation task* 
+
+The `cv.glm()` function automatically calculates the weighted $\text{MSE}_\text{CV}$. Write R code to call `cv.glm()` and report the weighted $\text{MSE}_\text{CV}$ value. 
+
+_Question_ Is the result similar to your own calculation of the weighted CV MSE in part (ii)?
+
+_Answer_ The value of the weighted CV MSE obtained from the cv.glm() function is 23.85074, which is very similar to the value we obtained using our own method in part (ii). This demonstrates that the cv.glm() function is computing the weighted CV MSE in the same manner as our own implementation. 
+``````{r}
+set.seed(232)
+fit.cv <- cv.glm(data = Boston, 
+                 glmfit = glm(medv ~ ., data = Boston), 
+                 K = 10)
+cv.mse.weighted <- fit.cv$delta[1]
+cv.mse.weighted # print weighted CV MSE
+```
+
+
+
+***Part II: Model Selections**
+
+ We introduce Polynomial Regressions and Generalized Additive Model (GAM) in this section. We compare these models with the ones discussed in previous parts. 
+ 
+**1) Polynomial regressions**
+
+In the lecture we looked at the simple linear regression `medv ~ lstat` and identified a non-linear effects in the model. Then we performed a 10-fold cross validation (CV) to search for the optimal degree $d$ such that the polynomial regression model `medv ~ poly(lstat, d)` has the lowest weighted $\text{MSE}_\text{CV}$.
+
+
+_Question i) _ Find the optimal degree of $d_1$ for the `lstat` predictor (using random seed 232).
+
+_Answer_  Minimum degree is 5.
+``````{r}
+set.seed(232)
+K= 10         #number of folds in cross-validation
+cv.errors =rep(0,K)
+max.degree = 10
+for (d in 1:max.degree){
+  glm.fit = glm(medv ~ poly(lstat,d), data = Boston)
+  cv.errors[d] =cv.glm(Boston, glm.fit, K = K)$delta[1]
+}
+plot(1:max.degree, cv.errors, type = "b", xlab = "Degree of Polynomial", ylab = "CV Error")
+cv.errors.lstat=cv.errors
+which.min(cv.errors)
+```
+
+***
+
+_Question ii)_  Perform similar CV analysis for `medv ~ poly(rm, d_2)` to identity the the optimal degree of $d_2$ for the `rm` predictor.
+
+_Answer_ Optimal degree is 5.
+
+
+``````{r}
+set.seed(232)
+K= 10         #number of folds in cross-validation
+cv.errors =rep(0,K)
+max.degree = 10
+for (d in 1:max.degree){
+  glm.fit = glm(medv ~ poly(rm,d), data = Boston)
+  cv.errors[d] =cv.glm(Boston, glm.fit, K = K)$delta[1]
+}
+plot(1:max.degree, cv.errors, type = "b", xlab = "Degree of Polynomial", ylab = "CV Error")
+cv.errors.rm=cv.errors
+which.min(cv.errors)
+```
+
+_Question iii_ Performing similar CV analysis for `medv ~ poly(ptratio, d_3)` to identity the the optimal degree of $d_3$ for the `ptratio` predictor.
+
+_Answer_ Optimal degree is 6**
+``````{r}
+set.seed(232)
+K= 10         #number of folds in cross-validation
+cv.errors =rep(0,K)
+max.degree = 10
+for (d in 1:max.degree){
+  glm.fit = glm(medv ~ poly(ptratio,d), data = Boston)
+  cv.errors[d] =cv.glm(Boston, glm.fit, K = K)$delta[1]
+}
+plot(1:max.degree, cv.errors, type = "b", xlab = "Degree of Polynomial", ylab = "CV Error")
+cv.errors.ptratio=cv.errors
+which.min(cv.errors)
+```
+
+**2)Generalized Additive Model (GAM)**
+
+*(i) Construction of a new generalized additive model*:
+
+$$\text{medv} \sim \sum_{k=1}^{d_1} \text{lstat}^k + \sum_{k=1}^{d_2} \text{rm}^k + \sum_{k=1}^{d_3} \text{ptratio}^k$$
+
+We set $d_1$, $d_2$, and $d_3$ to the best polynomial degree you obtained in part (1) for `lstat`, `rm`, and `ptratio`, respectively.
+
+``````{r}
+library(mgcv)
+set.seed(232)
+n.folds <- 10
+
+# CV for lm.full
+cv.full = cv.glm(Boston, lm.full, K = n.folds)
+cv.full.wmse = sum(cv.full$delta[1]^2 * cv.full$weights) / sum(cv.full$weights)
+
+# CV for lm.fwd3
+cv.fwd3 <- cv.glm(Boston, lm.fwd3, K = n.folds)
+cv.fwd3.wmse <- sum(cv.fwd3$delta[1]^2 * cv.fwd3$weights) / sum(cv.fwd3$weights)
+
+# CV for GAM
+d1 = which.min(cv.errors.lstat)
+d2 = which.min(cv.errors.rm)
+d3 = which.min(cv.errors.ptratio)
+gam.formula = as.formula(paste("medv ~", 
+                                paste("poly(lstat, ", d1, ")", collapse = " + "),
+                                "+",
+                                paste("poly(rm, ", d2, ")", collapse = " + "),
+                                "+",
+                                paste("poly(ptratio, ", d3, ")", collapse = " + ")))
+
+gam.fit = gam(gam.formula, data = Boston)
+```
+
+
+*(ii) Next, we run 10-fold CV test on `lm.full`, `lm.fwd3`, and new generalized additive model, separately and Compare the weighted $\text{MSE}_\text{CV}$.*  
+
+ 
+
+_Question_ Which model has the best performance? Explain your answer.
+
+
+_Answer_: We use the `cv.glm()` function to answer this question. We note that the generalized additive model (gam) gives impressively lower weighted cross-validated error. This means _gam_ model performs the best. If we use _ptratio_ instead of _crim_ in lm.fwd model, qualitative results do not change. 
+
+Our answer is based on following codes. 
+```{r}
+library(boot)
+lm.full = glm(medv ~ . , data=Boston)
+cv.full = cv.glm(Boston, lm.full, K=10)
+cv.full$delta[1]
+
+lm.fwd3 <- glm(medv ~ rm+lstat+crim, data=Boston) 
+cv.fwd3 <- cv.glm(Boston, lm.fwd3, K=10)
+cv.fwd3$delta[1]
+
+model.gam <- glm(medv ~ poly(lstat,d1) + poly(rm,d2) + poly(ptratio,d3), data = Boston)
+cv.gam<- cv.glm(Boston, model.gam, K=10)
+cv.gam$delta[1]
+```
+
+```{r}
+library(boot)
+lm.full = glm(medv ~ . , data=Boston)
+cv.full = cv.glm(Boston, lm.full, K=10)
+cv.full$delta[1]
+
+lm.fwd3 <- glm(medv ~ rm+lstat+ptratio, data=Boston)
+cv.fwd3 <- cv.glm(Boston, lm.fwd3, K=10)
+cv.fwd3$delta[1]
+
+model.gam <- glm(medv ~ poly(lstat,5) + poly(rm,5) + poly(ptratio,6), data = Boston)
+cv.gam<- cv.glm(Boston, model.gam, K=10)
+cv.gam$delta[1]
+```
