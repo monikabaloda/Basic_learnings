@@ -1,6 +1,9 @@
+There are two R-markdown (and associated rendered PDF) files : maps_using_ggplot and EDA. 
+
+A) First, in maps_using_ggplot files, we impliment maps using ggplot functions instead of maps packcage. This is to showcase the power of tidyverse/ggplot.  
 
 
-This R-markdown does exploratory data analysis (EDA). 
+B) The second and bigger R-markdown does exploratory data analysis (EDA). 
 We use `nycflights13` datset, a built-in R dataset contains information on all 336,776 flights that departed from New York City in 2013. 
 The data comes from the [US Bureau of Transportation Statistics](http://www.transtats.bts.gov/DatabaseInfo.asp?DB_ID=120&Link=0).
 
