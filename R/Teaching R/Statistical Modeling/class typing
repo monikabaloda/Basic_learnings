@@ -1,0 +1,34 @@
+ 
+ ***Syntax and class-typing***
+
+   1. For each of the following commands, either explain why they should be errors, or explain the non-erroneous result.
+    
+***Answer 1)***: vector1 is a vector of 4 objects stored in character format. It appears that these are numbers but R doesn't know that they are      numbers. R treats them as character type objects. That is why when sorting it, R places 12 before 5 because the first 1 comes before 5, it            doesn't read it as 12 numeric. Further, it cannot sum these numbers because the numbers are not stored as numbers. 
+```{r, eval=FALSE}
+      vector1 <- c("5", "12", "7", "32")
+      max(vector1)
+      sort(vector1)
+      sum(vector1)
+```
+
+  2. For the next series of commands, either explain their results, or why they should produce errors.
+
+```{r, eval=FALSE}
+vector2 <- c("5",7,12)
+vector2[2] + vector2[3]
+
+dataframe3 <- data.frame(z1="5",z2=7,z3=12)
+dataframe3[1,2] + dataframe3[1,3]
+
+list4 <- list(z1="6", z2=42, z3="49", z4=126)
+list4[[2]]+list4[[4]]
+list4[2]+list4[4]
+
+class(vector2)
+class(dataframe3[1,2])
+  
+```
+***Answer 2)***:
+     1. vector2[2] + vector2[3] is not possible because the class of vector2 is character and not numeric, therefore the plus sign cannot do the           addition arithmetic. Below we show that vector2 is of character type. 
+    2. Dataframes are allowed to store different classes of objects together. dataframe3[1,2] returns numerical(double) type and dataframe3[1,3] also     returns numerical type objects, therefore their addition is possible.  
+    3. list4[2]+list4[4] doesn't work because list4[2] is a list type object on which we cannot do addition operation. But list4[[2]] returns numeric     (double) type, therefore it is possible to do arithmetic operation like +. 
