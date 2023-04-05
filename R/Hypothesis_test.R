@@ -1,12 +1,6 @@
 
 
-###This R script file implements basic regressions #####
-
-
-setwd("F:/UCR/Academics/Fall2022/MGT256_Business_Analytics/Homeworks/Lab/Lab2") #setting working directory
-
-
-
+##Hypothesis Testing ##
 
 library("readxl")
 myData= read_excel("prime.xlsx", sheet="Prime")   ####Reading the file#######
