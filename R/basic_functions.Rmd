@@ -8,7 +8,7 @@ output: pdf_document
 ***This document takes data from Prof. Flegal of Statistics department, UCR's course Statistical Computing : STAT-206 homework problems***
 
 ```{r}
-#tinytex::install_tinytex()
+#tinytex::install_tinytex()  #to knit the R-markdown in PDF format
 ```
 
 1. The data set at [http://www.faculty.ucr.edu/~jflegal/206/rnf6080.dat] records hourly rainfall at a certain location in Canada, every day from 1960 to 1980.
