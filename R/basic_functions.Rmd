@@ -5,7 +5,7 @@ output: pdf_document
 ---
 
 
-***This document solves Statistical Computing : STAT-206 homework problems***
+***This document takes data from Prof. Flegal of Statistics department, UCR's course Statistical Computing : STAT-206 homework problems***
 
 ```{r}
 #tinytex::install_tinytex()
@@ -106,7 +106,6 @@ class(dataframe3[1,2])
 
 
 3. Working with functions and operators.
-
 
   3a. The colon operator will create a sequence of integers in order. It is a special case of the function `seq()` which you saw earlier in this assignment. Using the help command `help(seq)` to learn about the function, design an expression that will give you the sequence of numbers from 1 to 10000 in increments of 372. Design another that will give you a sequence between 1 and 10000 that is exactly 50 numbers in length.
    
