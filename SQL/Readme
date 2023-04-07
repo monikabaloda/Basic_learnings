@@ -1,1 +1,9 @@
 In this directory, I list some of SQL work I undertook in recent past. 
+
+The following document demonstrates my understanding of SQL. 
+1. Relational database: In these notes I decribe why relational databases were needed, how they operate today. 
+
+2. SQL_intro: In give a introduction to SQL with SELECT and JOIN queries. I wrote some tasks and implemented SQL query to perform the same. 
+
+3. Interfacing SQL with Python/R : Most of the time an analyst need to use SQL with R or Python. In these notes, I decribe steps with actual runable codes
+        in python and R on how to interface the SQL with Python or R. 
