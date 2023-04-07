@@ -1,2 +1,8 @@
-In this folder, I list down some of my notes that I used for teaching the undergraduate students at Univeristy of California, Riverside as teaching assistant. 
+In this folder, I list down some of my Python notes that I used for teaching the undergraduate students at Univeristy of California, Riverside as teaching assistant. 
 
+The following points contains brief description: 
+
+1. Python3 : Whats new, comparing Python with R and other language.
+2. First program: How to write first program in python. 
+3. Variable and Arithmatic : How to store variables and do basic arithmatic.
+4. Graphics : Describes the plots and graphs with python codes and example plots. 
