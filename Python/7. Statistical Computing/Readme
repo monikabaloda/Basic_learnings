@@ -1,0 +1,9 @@
+In this folder, we mainly include the following topics: 
+
+1. Scaling or Normalization : In order to do a smooth analysis, sometimes we need to rescale variables on the same scale so that we can compare them.
+           For example, in Principal Component Analysis (PCA), we need rescale the data so that the contribution of each variable in distance caluclation 
+           does not depend on the scale of variable. 
+
+2. Optimization : In this part, we learn how to get the points which can optimize the given objective function. We apply it in the context of least squares. 
+
+3. Simulation : we create a model with known population parameter. Then we estimate parameters using least squares method. We then assess the accuracy of the estimates.  
