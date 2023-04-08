@@ -1,1 +1,25 @@
-This folder contains my introductory coding files implementing basic stuff.  
+This folder contains my introductory coding files which I wrote when I started learning python.  
+
+I upload python notebook which contains python codes implementing the given concept on small problem. I formally did a course STAT206: Statistical Computing in python 
+at graduate level offered by the Department of Statistics, University of California, Riverside. 
+
+The topics that I uploaded here are: 
+
+1. Python Functions and Basic python objects 
+
+2. NumPy : usefule for algebra and numerical computations. 
+
+3. Pandas: Deals with dataframes, their manipulation and transformation. 
+
+4. Graphics: Graphs, plots, data visualization. 
+
+5. EDA and Data Wrangling: Data cleaning, transformation and exloratory data analysis. 
+
+6. Statistical Computing: normalization or scaling, optimization, simulation. 
+
+7. scikit learn : machine learning library in python 
+
+8. Teaching Python: I'm also a teaching assistant at the department of statistics at UC Riverside. I taught some of the python topics to my students. 
+
+I'm at the learning stage at this point, therefore the programs given here may have error, please feel free to correct me. You can write your feedbacks to me at 
+ mbalo005@ucr.edu
